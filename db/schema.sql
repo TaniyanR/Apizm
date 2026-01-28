@@ -1,0 +1,70 @@
+CREATE TABLE IF NOT EXISTS articles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    site_id INT NOT NULL,
+    category_id INT DEFAULT NULL,
+    title VARCHAR(255) NOT NULL,
+    url TEXT NOT NULL,
+    published_at DATETIME DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted TINYINT(1) NOT NULL DEFAULT 0,
+    hold_status VARCHAR(50) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS access_out (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    article_id INT NOT NULL,
+    site_id INT NOT NULL,
+    ip VARCHAR(45) NOT NULL,
+    ua_hash CHAR(64) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    dedup_key CHAR(64) NOT NULL,
+    is_bot TINYINT(1) NOT NULL DEFAULT 0,
+    is_fraud TINYINT(1) NOT NULL DEFAULT 0,
+    fraud_reason VARCHAR(255) DEFAULT NULL,
+    UNIQUE KEY uniq_access_out_dedup (dedup_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS article_pv (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    article_id INT NOT NULL,
+    site_id INT NOT NULL,
+    ip VARCHAR(45) NOT NULL,
+    ua_hash CHAR(64) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    dedup_key CHAR(64) NOT NULL,
+    UNIQUE KEY uniq_article_pv_dedup (dedup_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS deletion_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    article_id INT NOT NULL,
+    site_id INT NOT NULL,
+    reason VARCHAR(255) DEFAULT NULL,
+    contact VARCHAR(255) DEFAULT NULL,
+    message TEXT DEFAULT NULL,
+    ip VARCHAR(45) NOT NULL,
+    user_agent TEXT NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS analytics_events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    event_type VARCHAR(50) NOT NULL,
+    from_page VARCHAR(255) DEFAULT NULL,
+    from_block VARCHAR(100) DEFAULT NULL,
+    to_url TEXT NOT NULL,
+    article_id INT DEFAULT NULL,
+    ip VARCHAR(45) NOT NULL,
+    ua_hash CHAR(64) NOT NULL,
+    dedup_key CHAR(64) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_analytics_events_dedup (dedup_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    value TEXT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
