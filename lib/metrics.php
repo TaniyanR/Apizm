@@ -32,14 +32,14 @@ function is_excluded_host(PDO $pdo, string $host): bool
 function record_in_if_external(string $pageType, ?int $articleId = null, ?int $siteId = null): void
 {
     $refHost = referrer_host();
-    if ($refHost === '' || is_internal_referrer($refHost)) {
+    if (is_internal_referrer($refHost)) {
         return;
     }
 
     $pdo = get_pdo();
 
     try {
-        if (is_excluded_host($pdo, $refHost)) {
+        if ($refHost !== '' && is_excluded_host($pdo, $refHost)) {
             return;
         }
     } catch (Throwable $e) {
