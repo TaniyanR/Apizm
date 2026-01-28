@@ -168,24 +168,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <h1><?php echo h($articleTitle); ?></h1>
 
-        <p>
-            <a class="relay-link" href="/out.php?aid=<?php echo h((string) $article['id']); ?>" data-track-block="relay-main">
-                <?php echo h($displayAnchor); ?>
-            </a>
-        </p>
+        <?php if ($isDeleted !== 1): ?>
+            <p>
+                <a class="relay-link" href="/out.php?aid=<?php echo h((string) $article['id']); ?>" data-track-block="relay-main">
+                    <?php echo h($displayAnchor); ?>
+                </a>
+            </p>
+        <?php endif; ?>
 
         <?php if ($holdStatus !== ''): ?>
             <p>状態: <?php echo h((string) $holdStatus); ?></p>
         <?php endif; ?>
 
-        <section class="fixed-links" data-track-block="fixed-links">
-            <h2>固定リンク</h2>
-            <ul>
-                <?php foreach ($fixedLinks as $link): ?>
-                    <li><a href="<?php echo h($link['url']); ?>"><?php echo h($link['label']); ?></a></li>
-                <?php endforeach; ?>
-            </ul>
-        </section>
+        <?php if ($isDeleted !== 1): ?>
+            <section class="fixed-links" data-track-block="fixed-links">
+                <h2>固定リンク</h2>
+                <ul>
+                    <?php foreach ($fixedLinks as $link): ?>
+                        <li><a href="<?php echo h($link['url']); ?>"><?php echo h($link['label']); ?></a></li>
+                    <?php endforeach; ?>
+                </ul>
+            </section>
+        <?php endif; ?>
 
         <section class="deletion-request" data-track-block="deletion-request">
             <h2>削除依頼</h2>
