@@ -11,6 +11,11 @@ try {
 } catch (Throwable $e) {
     error_log('maybe_refresh failed: ' . $e->getMessage());
 }
+try {
+    record_in_if_external('top');
+} catch (Throwable $e) {
+    error_log('IN record failed: ' . $e->getMessage());
+}
 
 function fetch_latest_articles(PDO $pdo, int $limit = 20): array
 {
