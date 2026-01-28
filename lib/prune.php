@@ -18,13 +18,13 @@ function prune_expired_articles(PDO $pdo): void
 
     $pdo->beginTransaction();
     try {
-        $stmt = $pdo->prepare('INSERT IGNORE INTO deleted_articles (article_id, reason, created_at) SELECT id, :reason, NOW() FROM articles WHERE is_deleted = 0 AND created_at < :cutoff');
+        $stmt = $pdo->prepare('INSERT IGNORE INTO deleted_articles (article_id, reason, created_at) SELECT id, :reason, NOW() FROM articles WHERE is_deleted = 0 AND COALESCE(published_at, created_at) < :cutoff');
         $stmt->execute([
             ':reason' => '期限切れ',
             ':cutoff' => $cutoff,
         ]);
 
-        $update = $pdo->prepare('UPDATE articles SET is_deleted = 1 WHERE is_deleted = 0 AND created_at < :cutoff');
+        $update = $pdo->prepare('UPDATE articles SET is_deleted = 1 WHERE is_deleted = 0 AND COALESCE(published_at, created_at) < :cutoff');
         $update->execute([':cutoff' => $cutoff]);
 
         $pdo->commit();
