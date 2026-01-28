@@ -35,3 +35,58 @@ function is_bot_ua(string $ua): bool
     $pattern = '/bot|crawler|spider|curl|wget|python|scrapy|httpclient|monitoring/i';
     return (bool) preg_match($pattern, $ua);
 }
+
+function normalize_host(string $host): string
+{
+    $normalized = strtolower(trim($host));
+    $normalized = rtrim($normalized, '.');
+    if (str_starts_with($normalized, 'www.')) {
+        $normalized = substr($normalized, 4);
+    }
+    $normalized = preg_replace('/:\d+$/', '', $normalized);
+
+    return $normalized;
+}
+
+function referrer_url(): string
+{
+    return trim((string) ($_SERVER['HTTP_REFERER'] ?? ''));
+}
+
+function referrer_host(): string
+{
+    $ref = referrer_url();
+    if ($ref === '') {
+        return '';
+    }
+    $host = parse_url($ref, PHP_URL_HOST);
+    if (!is_string($host) || $host === '') {
+        return '';
+    }
+
+    return normalize_host($host);
+}
+
+function current_host(): string
+{
+    $host = $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? '');
+    if ($host === '') {
+        return '';
+    }
+
+    return normalize_host($host);
+}
+
+function is_internal_referrer(string $refHost): bool
+{
+    if ($refHost === '') {
+        return false;
+    }
+
+    $current = current_host();
+    if ($current === '') {
+        return false;
+    }
+
+    return $refHost === $current;
+}
