@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/lib/db.php';
 require __DIR__ . '/lib/util.php';
+require __DIR__ . '/lib/metrics.php';
 
 $aid = isset($_GET['aid']) ? (int) $_GET['aid'] : 0;
 $anchorText = trim((string) ($_GET['at'] ?? ''));
@@ -23,6 +24,12 @@ if (!$article) {
     exit;
 }
 
+try {
+    maybe_refresh($pdo);
+} catch (Throwable $e) {
+    error_log('maybe_refresh failed: ' . $e->getMessage());
+}
+
 $articleTitle = $article['title'] ?? '';
 $displayAnchor = $anchorText !== '' ? $anchorText : $articleTitle;
 $articleUrl = $article['url'] ?? '';
@@ -43,6 +50,12 @@ try {
     ]);
 } catch (Throwable $e) {
     error_log('PV insert failed: ' . $e->getMessage());
+}
+
+try {
+    record_in_if_external('relay', (int) $article['id'], (int) $article['site_id']);
+} catch (Throwable $e) {
+    error_log('IN record failed: ' . $e->getMessage());
 }
 
 $breadcrumbs = [];
@@ -70,26 +83,48 @@ if ($isDeleted === 1) {
 }
 
 $deletionSuccess = false;
+$deletionError = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $reason = trim((string) ($_POST['reason'] ?? ''));
     $contact = trim((string) ($_POST['contact'] ?? ''));
     $message = trim((string) ($_POST['message'] ?? ''));
+    $honeypot = trim((string) ($_POST['website'] ?? ''));
 
-    try {
-        $stmt = $pdo->prepare('INSERT INTO deletion_requests (article_id, site_id, reason, contact, message, ip, user_agent, status, created_at, updated_at) VALUES (:article_id, :site_id, :reason, :contact, :message, :ip, :user_agent, :status, NOW(), NOW())');
-        $stmt->execute([
-            ':article_id' => $article['id'],
-            ':site_id' => $article['site_id'],
-            ':reason' => $reason,
-            ':contact' => $contact,
-            ':message' => $message,
-            ':ip' => $ip,
-            ':user_agent' => $ua,
-            ':status' => 'pending',
-        ]);
-        $deletionSuccess = true;
-    } catch (Throwable $e) {
-        error_log('Deletion request insert failed: ' . $e->getMessage());
+    if ($honeypot !== '') {
+        $deletionError = '送信に失敗しました。';
+    } else {
+        try {
+            $rateLimit = 3;
+            $stmt = $pdo->prepare('SELECT COUNT(*) AS cnt FROM deletion_requests WHERE ip = :ip AND created_at >= (NOW() - INTERVAL 1 MINUTE)');
+            $stmt->execute([':ip' => $ip]);
+            $row = $stmt->fetch();
+            $recentCount = $row ? (int) $row['cnt'] : 0;
+            if ($recentCount >= $rateLimit) {
+                $deletionError = '送信が集中しています。少し時間をおいて再度お試しください。';
+            }
+        } catch (Throwable $e) {
+            error_log('Deletion rate limit check failed: ' . $e->getMessage());
+        }
+    }
+
+    if ($deletionError === '') {
+        try {
+            $stmt = $pdo->prepare('INSERT INTO deletion_requests (article_id, site_id, reason, contact, message, ip, user_agent, status, created_at, updated_at) VALUES (:article_id, :site_id, :reason, :contact, :message, :ip, :user_agent, :status, NOW(), NOW())');
+            $stmt->execute([
+                ':article_id' => $article['id'],
+                ':site_id' => $article['site_id'],
+                ':reason' => $reason,
+                ':contact' => $contact,
+                ':message' => $message,
+                ':ip' => $ip,
+                ':user_agent' => $ua,
+                ':status' => 'pending',
+            ]);
+            $deletionSuccess = true;
+        } catch (Throwable $e) {
+            error_log('Deletion request insert failed: ' . $e->getMessage());
+            $deletionError = '送信に失敗しました。';
+        }
     }
 }
 ?>
@@ -110,6 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .fixed-links ul { list-style: none; padding-left: 0; }
         .fixed-links li { margin-bottom: 4px; }
         form input, form textarea { width: 100%; box-sizing: border-box; margin-bottom: 8px; }
+        .honeypot { position: absolute; left: -9999px; top: -9999px; }
     </style>
 </head>
 <body data-article-id="<?php echo h((string) $article['id']); ?>">
@@ -156,7 +192,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php if ($deletionSuccess): ?>
                 <p>送信しました。対応までお待ちください。</p>
             <?php endif; ?>
+            <?php if ($deletionError !== ''): ?>
+                <p><?php echo h($deletionError); ?></p>
+            <?php endif; ?>
             <form method="post">
+                <div class="honeypot" aria-hidden="true">
+                    <label>
+                        Webサイト
+                        <input type="text" name="website" value="">
+                    </label>
+                </div>
                 <label>
                     理由
                     <input type="text" name="reason" value="<?php echo isset($_POST['reason']) ? h((string) $_POST['reason']) : ''; ?>">

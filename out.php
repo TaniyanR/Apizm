@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/lib/db.php';
 require __DIR__ . '/lib/util.php';
+require __DIR__ . '/lib/metrics.php';
 
 $aid = isset($_GET['aid']) ? (int) $_GET['aid'] : 0;
 if ($aid <= 0) {
@@ -10,6 +11,11 @@ if ($aid <= 0) {
 }
 
 $pdo = get_pdo();
+try {
+    maybe_refresh($pdo);
+} catch (Throwable $e) {
+    error_log('maybe_refresh failed: ' . $e->getMessage());
+}
 $stmt = $pdo->prepare('SELECT id, site_id, url FROM articles WHERE id = :id LIMIT 1');
 $stmt->execute([':id' => $aid]);
 $article = $stmt->fetch();
