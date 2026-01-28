@@ -9,11 +9,13 @@ function rebuild_rank_cache(PDO $pdo): void
             'table' => 'access_out',
             'group' => 'article_id',
             'interval' => 'INTERVAL 1 DAY',
+            'where' => 'is_fraud = 0',
         ],
         'out7' => [
             'table' => 'access_out',
             'group' => 'article_id',
             'interval' => 'INTERVAL 7 DAY',
+            'where' => 'is_fraud = 0',
         ],
         'pv24' => [
             'table' => 'article_pv',

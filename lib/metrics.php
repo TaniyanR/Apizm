@@ -52,7 +52,7 @@ function record_in_if_external(string $pageType, ?int $articleId = null, ?int $s
     $refUrl = referrer_url();
 
     try {
-        $bucket = time_bucket(60);
+        $bucket = time_bucket(43200);
         $dedup = dedup_key([$pageType, $articleId, $siteId, $ip, $ua, $refHost, $bucket]);
         $stmt = $pdo->prepare('INSERT IGNORE INTO access_in (page_type, article_id, site_id, ref_host, ref_url, ip, ua_hash, created_at, dedup_key) VALUES (:page_type, :article_id, :site_id, :ref_host, :ref_url, :ip, :ua_hash, NOW(), :dedup_key)');
         $stmt->execute([
