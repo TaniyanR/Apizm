@@ -246,3 +246,20 @@ URL
 - URL正規化・関連付け対応
 - UP前に設定ファイル編集
 - デザインは最後に設定
+
+
+## 管理画面ログイン（簡易認証）
+
+- ログインURL: `/admin/login0929.php`
+- 初期ログインID: `admin`
+- 初期パスワード: `password`
+- ログイン後に管理ページ（`/admin/deletion_requests.php` など）へアクセスできます。
+- 未ログインで管理ページへアクセスした場合はログイン画面へリダイレクトされます。
+- ログアウトURL: `/admin/logout.php`
+
+### XAMPPアクセス例
+
+- `http://localhost/Apizm/admin/login0929.php`
+
+> 本番公開前に、`lib/admin_auth.php` の認証情報を必ず変更してください。
+

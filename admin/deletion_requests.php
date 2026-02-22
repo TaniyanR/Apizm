@@ -1,6 +1,9 @@
 <?php
+require __DIR__ . '/../lib/admin_auth.php';
 require __DIR__ . '/../lib/db.php';
 require __DIR__ . '/../lib/util.php';
+
+require_admin_login();
 
 $pdo = get_pdo();
 $stmt = $pdo->query('SELECT id, article_id, site_id, reason, contact, message, status, created_at FROM deletion_requests ORDER BY created_at DESC LIMIT 100');
@@ -19,6 +22,7 @@ $requests = $stmt->fetchAll();
     </style>
 </head>
 <body>
+    <p><a href="/admin/logout.php">ログアウト</a></p>
     <h1>削除依頼一覧</h1>
     <table>
         <thead>

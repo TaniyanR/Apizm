@@ -1,6 +1,9 @@
 <?php
+require __DIR__ . '/../lib/admin_auth.php';
 require __DIR__ . '/../lib/db.php';
 require __DIR__ . '/../lib/util.php';
+
+require_admin_login();
 
 $pdo = get_pdo();
 
@@ -65,6 +68,7 @@ if (!empty($siteIds)) {
     </style>
 </head>
 <body>
+    <p><a href="/admin/logout.php">ログアウト</a></p>
     <h1>ランキングキャッシュ</h1>
 
     <h2>サイトランキング（IN 24h）</h2>
